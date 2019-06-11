@@ -48,8 +48,8 @@ c:\my\debuggers_x86\cdb -c ".fnent user32!InternalDialogbox;q" c:\my\debuggers_x
 " => How to execute command/script against multiple dumps? {{{2
 " https://www.wintellect.com/automating-analyzing-tons-of-minidump-files-with-windbg-and-powershell/
 $folder = "c:\dumps"
-gci $folder -Recurse | % { cdb -z $_ -c "!gle -all;q" }
-gci $folder -Recurse | % {$dmp = $_;cdb -z $dmp -c "!load pde;!dpx;kbnf;q" | % { "$($dmp) - $($_)" }}
+gci $folder -Recurse | % { cdb -z $_.fullname -c "!gle -all;q" }
+gci $folder -Recurse | % {$dmp = $_.fullname;cdb -z $dmp -c "!load pde;!dpx;kbnf;q" | % { "$($dmp) - $($_)" }}
 
 " => How to execute command/script against multiple processes? {{{2
 gps ul3comm | % { c:\my\debuggers_x86\cdb -p $_.ID -c "!gle -all;qd" } | out-file gle.log -encoding ascii
