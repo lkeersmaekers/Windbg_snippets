@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug]
+"Auto"="1"
+"Debugger"="\"D:\\Traveler\\My\\debuggers\\windbg.exe\" -p %ld -e %ld -c \".jdinfo %p\""
+  
+[HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug]
+"Auto"="1"
+"Debugger"="\"D:\\Traveler\\My\\debuggers_x86\\windbg.exe\" -p %ld -e %ld -c \".jdinfo %p\""
