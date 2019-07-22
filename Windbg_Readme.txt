@@ -52,7 +52,10 @@ gci $folder -Recurse | % { cdb -z $_.fullname -c "!gle -all;q" }
 gci $folder -Recurse | % {$dmp = $_.fullname;cdb -z $dmp -c "!load pde;!dpx;kbnf;q" | % { "$($dmp) - $($_)" }}
 
 " => How to execute command/script against multiple processes? {{{2
+" Get last error
 gps ul3comm | % { c:\my\debuggers_x86\cdb -p $_.ID -c "!gle -all;qd" } | out-file gle.log -encoding ascii
+" Sets forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated from 300 (10 minutes) to 600 (20 minutes)
+gps afc | % {c:\my\debuggers_x86\cdb -p $_.ID -c "db 004C81C0 L3;ed 4c81c1 0258;db 004C81C0 L3;qd" | sls '004C81C0'}
 
 " => How to dump 100 calls from a running process {{{2
 " http://stackoverflow.com/questions/38710710/how-to-prevent-the-output-truncated-if-the-rows-of-output-from-the-windbg-to-lar
