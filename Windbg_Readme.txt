@@ -66,10 +66,24 @@ cdb -c ".while (1) {tc;r}" msg.exe * /time:999999 Test >> foo.txt
 cdb -c ".while (1) {tc;r}" <executable> <params> >> foo.txt
 
 " => How to add a breakpoint on postmessage and dump the parameters using a script file
-'bm USER32!PostmessageA "r rsi, rdi, r8, r9;g"' | Out-File PostmessageBreakpoint.script -Encoding Ascii -Force
-'.cls' | Out-File PostmessageBreakpoint.script -Encoding Ascii -Append -Force
-'g;' | Out-File PostmessageBreakpoint.script -Encoding Ascii -Append -Force
+$script = 'PostmessageBreakpoint.script'
+'bm USER32!PostmessageA "r rsi, rdi, r8, r9;g"' | Out-File $script -Encoding Ascii -Force
+'.cls'                                          | Out-File $script -Encoding Ascii -Append -Force
+'g;'                                            | Out-File $script -Encoding Ascii -Append -Force
 gps powershell_ise | % { c:\apps\my\debuggers\cdb -p $_.ID -cfr PostmessageBreakpoint.script }
+
+" => How to add a breakpoint on an address and create a dumpfile using a script file
+$script = 'C:\Users\kelie\Desktop\RequestAborted.script'
+'* disable all first/second chance exception handling'                               | Out-File $script -Encoding Ascii -Force
+'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                            | Out-File $script -Encoding Ascii -Force -Append
+'* add breakpoint, create unique dump file and quit without closing the application' | Out-File $script -Encoding Ascii -Force -Append
+'bu 00a1aba8 ".dump /ma /u ul3acc_request_aborted.dmp;qd";'                          | Out-File $script -Encoding Ascii -Force -Append
+'* go'                                                                               | Out-File $script -Encoding Ascii -Force -Append
+'g;'                                                                                 | Out-File $script -Encoding Ascii -Force -Append
+gps ul3acc | ? {$_.Id -notin (7140, 6184)} | % {
+  $argumentlist = "-p $($_.ID) -cfr $($script)"
+  Start-Process C:\Users\kelie\Desktop\debuggers_x86\cdb -ArgumentList $argumentlist
+}
 
 " => How to trace all calls from a process {{{2
 windbg calc
