@@ -1,7 +1,7 @@
-vim:fdc=5:fdm=marker:fmr={{{,}}}:foldlevel=1:ft=vim
+vim:fdc=5:fdm=marker:fmr={{{{,}}}}:foldlevel=1:ft=vim
 
-" => Readme/Setup {{{1
-"   => from http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-Building-your-USB-thumbdrive {{{2
+" => Readme/Setup {{{{1
+"   => from http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-Building-your-USB-thumbdrive {{{{2
 
 -------------------------------------------------------------------------------------------------------
 Command file                | Comment
@@ -23,83 +23,94 @@ application_verifier | installers\Application Verifier\ApplicationVerifier.amd64
 performance_toolkit  | installers\Windows Performance Toolkit\wpt_x64.msi            | Enkel 64 bit nodig
 -----------------------------------------------------------------------------------------------------------------------------------------
 
-"   => cmdtree {{{2
+"   => cmdtree {{{{2
 http://voneinem-windbg.blogspot.co.uk/2008/09/amazing-helper-cmdtree.html
 http://blogs.msdn.com/b/debuggingtoolbox/archive/2008/09/17/special-command-execute-commands-from-a-customized-user-interface-with-cmdtree.aspx
 
 .cmdtree cmdtree.txt
 
-"   => vim {{{2
+"   => vim {{{{2
 Interessante filetypes om dumps in vim te bekijken.
   set ft=flexwiki
   set ft=reva
   set ft=gitrebase
 
-" => Howto's livekd/kd/cdb {{{1"
-" => How to dump all function names of an executable? {{{2
+" => Howto's livekd/kd/cdb {{{{1"
+" => How to dump all function names of an executable? {{{{2
 " http://stackoverflow.com/questions/36064314/how-to-dump-all-function-names-of-an-executable
 cdb -z "c:\windows\system32\notepad.exe" -c ".symfix;.reload;x *!*;q"
 
-" => How to dump a function in an executable? {{{2
+" => How to dump a function in an executable? {{{{2
 " http://stackoverflow.com/a/42692346/52598
 c:\my\debuggers\cdb -c ".fnent user32!InternalDialogbox;q" c:\my\debuggers\cdb
 c:\my\debuggers_x86\cdb -c ".fnent user32!InternalDialogbox;q" c:\my\debuggers_x86\cdb
 
-" => How to execute command/script against multiple dumps? {{{2
+" => How to execute command/script against multiple dumps? {{{{2
 " https://www.wintellect.com/automating-analyzing-tons-of-minidump-files-with-windbg-and-powershell/
 $folder = "c:\dumps"
 gci $folder -Recurse | % { cdb -z $_.fullname -c "!gle -all;q" }
 gci $folder -Recurse | % {$dmp = $_.fullname;cdb -z $dmp -c "!load pde;!dpx;kbnf;q" | % { "$($dmp) - $($_)" }}
 
-" => How to execute command/script against multiple processes? {{{2
+" => How to execute command/script against multiple processes? {{{{2
 " Get last error
 gps ul3comm | % { c:\my\debuggers_x86\cdb -p $_.ID -c "!gle -all;qd" } | out-file gle.log -encoding ascii
 " Sets forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated from 300 (10 minutes) to 600 (20 minutes)
 gps afc | % {c:\my\debuggers_x86\cdb -p $_.ID -c "db 004C81C0 L3;ed 4c81c1 0258;db 004C81C0 L3;qd" | sls '004C81C0'}
 
-" => How to dump 100 calls from a running process {{{2
+" => How to dump 100 calls from a running process {{{{2
 " http://stackoverflow.com/questions/38710710/how-to-prevent-the-output-truncated-if-the-rows-of-output-from-the-windbg-to-lar
 cdb -c "tc 100;q" calc >> foo.txt
 
-" => How to dump all calls from a process {{{2
+" => How to dump all calls from a process {{{{2
 cdb -c ".while (1) {tc;r}" msg.exe * /time:999999 Test >> foo.txt
 cdb -c ".while (1) {tc;r}" <executable> <params> >> foo.txt
 
-" => How to add a breakpoint on postmessage and dump the parameters using a script file
+" => How to add a breakpoint on postmessage and dump the parameters using a script file {{{{2
 $script = 'PostmessageBreakpoint.script'
 'bm USER32!PostmessageA "r rsi, rdi, r8, r9;g"' | Out-File $script -Encoding Ascii -Force
 '.cls'                                          | Out-File $script -Encoding Ascii -Append -Force
 'g;'                                            | Out-File $script -Encoding Ascii -Append -Force
 gps powershell_ise | % { c:\apps\my\debuggers\cdb -p $_.ID -cfr PostmessageBreakpoint.script }
 
-" => How to add a breakpoint on an address and create a dumpfile using a script file
-$script = 'C:\Users\kelie\Desktop\RequestAborted.script'
-'* disable all first/second chance exception handling'                               | Out-File $script -Encoding Ascii -Force
-'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                            | Out-File $script -Encoding Ascii -Force -Append
-'* add breakpoint, create unique dump file and quit without closing the application' | Out-File $script -Encoding Ascii -Force -Append
-'bu 00a1aba8 ".dump /ma /u ul3acc_request_aborted.dmp;qd";'                          | Out-File $script -Encoding Ascii -Force -Append
-'* go'                                                                               | Out-File $script -Encoding Ascii -Force -Append
-'g;'                                                                                 | Out-File $script -Encoding Ascii -Force -Append
-gps ul3acc | ? {$_.Id -notin (7140, 6184)} | % {
-  $argumentlist = "-p $($_.ID) -cfr $($script)"
-  Start-Process C:\Users\kelie\Desktop\debuggers_x86\cdb -ArgumentList $argumentlist
+" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
+$ul3script = 'C:\Users\kelie\Desktop\UL3accRequestAborted.script'
+'* disable all first/second chance exception handling'                                     | Out-File $ul3script -Encoding Ascii -Force
+'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                                  | Out-File $ul3script -Encoding Ascii -Force -Append
+'.logopen /t C:\\Users\\kelie\\Desktop\\ul3acc_request_aborted.log'                        | Out-File $ul3script -Encoding Ascii -Force -Append
+'* add breakpoint, create unique dump file, clear breakpoints and just keep attached'      | Out-File $ul3script -Encoding Ascii -Force -Append
+'bu 00a1ab9d ".dump /ma /u C:\\Users\\kelie\\Desktop\\ul3acc_request_aborted.dmp;bc *;gc"' | Out-File $ul3script -Encoding Ascii -Force -Append
+'* go'                                                                                     | Out-File $ul3script -Encoding Ascii -Force -Append
+'g;'                                                                                       | Out-File $ul3script -Encoding Ascii -Force -Append
+
+while ($true) {
+    # Get all ul3acc processes with parent forker:04
+    gwmi -cl win32_process -filter "ParentProcessID = $((gwmi -cl win32_process -filter 'commandline like "%forker:04%"').ProcessID)" | % {
+        # test if the ul3acc process is not being debugged already
+        if (@(gwmi -cl win32_process -filter "commandline like '%-p $($_.ProcessID) -cfr%'").Count -eq 0) {
+            # Attach a debugger
+            $argumentlist = "-p $($_.ProcessID) -cfr $($ul3script)"
+            Start-Process C:\Users\kelie\Desktop\debuggers_x86\cdb -ArgumentList $argumentlist
+            Write-Output "$(Get-Date) - Attached to $($_.ProcessID)"
+        }
+    }
+    Start-Sleep -Seconds 5
 }
 
-" => How to trace all calls from a process {{{2
+" => How to trace all calls from a process {{{{2
 windbg calc
 "skipping all the ldrint system calls 
 bp calc!WinMain ; g
 " tracing only calc module from eip to some specific address and printing the return values (please note using arbitrary values as EndAddress may possibly corrupt the code by inserting 0xcc in middle of instruction ) 
 wt -l 2 -oR -m calc
 
-" => Breakpoints: How to dump all calls from a live debugging session {{{2
+" => Breakpoints: How to dump all calls from a live debugging session {{{{2
 bm calc!* "k L1;g;"
 
 bm ul3comm!* "r;!dpx;g;"
 bm PDC32!* "r;!dpx;g;"
 bm vbscript!* "r;!dpx;g;"
 
-" => Breakpoints: How to enable/disable breakpoints from other breakpoints{{{2
+" => Breakpoints: How to enable/disable breakpoints from other breakpoints{{{{2
 bm calc!* "k L1;g;"
 bm ntdll!* "kv1;gc;"
 bm user32!* "kv1;gc;"
@@ -108,7 +119,7 @@ bd "user32!*"
 bu TER21!TerCreateWindowAlt ".echotime;.echo Start TER21!TerCreateWindowAlt;be \"ntdll!*\";be \"user32!*\";gc;"
 bu TER21!TerWndProc ".echotime;.echo Start TER21!TerWndProc;bd \"ntdll!*\";bd \"user32!*\";gc;"
 
-" => Breakpoints: How to dump waits on handles {{{2
+" => Breakpoints: How to dump waits on handles {{{{2
 bm ntdll!ntwaitforsingleobject "j poi(@esp+0x4)=0x010c 'kbnf 2;r;gc;';gc;"
 bm ntdll!*waitforsingle* "!handle poi(@esp+0x4);gc;';gc;"
 bm ntdll!*waitformultiple* "dd poi(esp + 0x8) L4;gc;';gc;"
@@ -117,7 +128,7 @@ bm ntdll!*waitformultiple* "dd poi(esp + 0x8) L4;gc;';gc;"
 "    https://reverseengineering.stackexchange.com/a/18362/1680
 .foreach ( place { !showexports ollydbg } ) { bp place }
 
-" => How to get the current apartment for a thread {{{2
+" => How to get the current apartment for a thread {{{{2
 " http://chenlailin.blogspot.be/2008/02/how-to-get-current-apartment-for-thread.html
 !teb
 dt TEB fffdd000 ReservedForOle
@@ -125,7 +136,7 @@ dt SOleTlsData 0x00f02b48
 !grep pCurrentCtx dt SOleTlsData 0x00f02b48
 !grep AptKind dt -r2 CObjectContext 0x00f03c58
 
-" => How to get the contents of a section object {{{2
+" => How to get the contents of a section object {{{{2
 "https://stackoverflow.com/questions/46745973/how-to-get-the-content-of-a-section-object-in-a-kernel-dump
 !process 0 0 ul3comm.exe
 .process /r /p fffffa800ea80060
@@ -138,17 +149,17 @@ dt nt!_SECTION_OBJECT Segment fffff8a012e26710
 dt nt!_SEGMENT u2.FirstMappedVa 0xfffff8a0102d7820
 db 0x0000000003400000 L1
 
-" => How to get the TTD calls containing lasterror/messagebox {{{2
+" => How to get the TTD calls containing lasterror/messagebox {{{{2
 dx @$calls = @$cursession.TTD.Calls("kernelbase!GetLastError", "user32!MessageBoxW")
 dx -g @$calls.Where(x => x.Function.Contains("MessageBox") || x.ReturnValue != 0).OrderBy(obj => obj.@"ReturnValue").OrderBy(x => x.TimeStart.Sequence), 1000
 
-" => How to stop or trace lasterrors {{{2
+" => How to stop or trace lasterrors {{{{2
 bm ntdll!RtlSetLastWin32Error ".if (poi(@esp+0x4)!=0x0) {.echotime;kbnf 2;r;gc;} .else {gc;}"
 "of equivalent met j
 bm ntdll!RtlSetLastWin32Error "j poi(@esp+0x4)!0x0 '.echotime;kbnf 2;r;gc;';gc;"
 
-" => Windbg {{{1"
-" => Inside Windows Debugging {{{2
+" => Windbg {{{{1"
+" => Inside Windows Debugging {{{{2
 
 --------------------------------------------------------------------------------
 | Start a target process directly                | - windbg.exe target.exe     |
@@ -163,7 +174,7 @@ bm ntdll!RtlSetLastWin32Error "j poi(@esp+0x4)!0x0 '.echotime;kbnf 2;r;gc;';gc;"
 | Dump stack trace                               | - k, kP, kn, kvn and so on  |
 --------------------------------------------------------------------------------
 
-"   => Windows Debugging Notebook {{{2
+"   => Windows Debugging Notebook {{{{2
 
 ---------------------
 Watch and trace (p39)
@@ -209,7 +220,7 @@ Displaying all symbols for a specified module (p125)
 ----------------------------------------------------
 x /t /v /n notepad!*
 
-"   => Procdump Extensions (you want this!!!) {{{2
+"   => Procdump Extensions (you want this!!!) {{{{2
 
 .load D:\Traveler\My\Andrew Richards\ProcDumpExt v6.4\x64\ProcDumpExt.dll
 .load D:\Traveler\My\Andrew Richards\ProcDumpExt v6.4\x86\ProcDumpExt.dll
@@ -217,7 +228,7 @@ x /t /v /n notepad!*
 !ProcDumpExt.help
 !ProcDumpExt.dpx
 
-"   => CMKD Extensions (you want this!!!) {{{2
+"   => CMKD Extensions (you want this!!!) {{{{2
 
 .load cmkd.dll
 
@@ -226,7 +237,7 @@ x /t /v /n notepad!*
 !stack
 The !stack command displays registers based parameters passed to x64 functions. 
 
-"   => Delphi Objecten Windbg Scripts {{{2
+"   => Delphi Objecten Windbg Scripts {{{{2
 ------------------------------------------------------------------------------------------------------
 Find the base address en base of code for a module(executable)
 https://stackoverflow.com/questions/38205106/resolve-address-of-accessviolation-in-the-map-file
@@ -325,7 +336,7 @@ http://marc.durdin.net/2012/05/windbg-and-delphi-exceptions-in-x64.html
 -----------------------------------------------------------------------
 TODO: READ
 
-"   => Writing LINQ queries in WinDbg {{{2
+"   => Writing LINQ queries in WinDbg {{{{2
 ----------------------------------------------------------------------------------
 https://blogs.msdn.microsoft.com/windbg/2016/10/03/writing-linq-queries-in-windbg/
 ----------------------------------------------------------------------------------
@@ -334,15 +345,15 @@ dx Debugger
 => Equivalent of !busy command using LINQ - https://stackoverflow.com/a/54237138/52598
 dx     @$curprocess.Threads.Select(p=>p.Stack).Select(p=>p.Frames).Select(t=>t[1]).Where((p=>p.ToDisplayString().Contains("Wait")!=true)).Where(p=>p.ToDisplayString().Contains("Remove")!=true)
 
-"   => Javascript Scripting {{{2
+"   => Javascript Scripting {{{{2
 ----------------------------------------------------------------------------------
 https://msdn.microsoft.com/library/windows/hardware/3442E2C4-4054-4698-B7FB-8FE19D26C171.aspx
 https://msdn.microsoft.com/library/windows/hardware/F477430B-10C7-4039-9C5F-25556C306643.aspx
 https://msdn.microsoft.com/library/windows/hardware/A8E12564-D083-43A7-920E-22C4D627FEE8.aspx
 ----------------------------------------------------------------------------------
 
-" => Defrag Tools {{{1
-"   => Defrag Tools: #9 - ProcDump  {{{2
+" => Defrag Tools {{{{1
+"   => Defrag Tools: #9 - ProcDump  {{{{2
 
 -r parameter !!!
 
@@ -410,7 +421,7 @@ Use -? -e to see example command lines.
 If you omit the dump file name, it defaults to <processname>_<datetime>.dmp.
 
 
-"   => Defrag Tools: #13  {{{2
+"   => Defrag Tools: #13  {{{{2
 -------------------------------------------------------------------
 -- https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-13-WinDbg
 -- 
@@ -445,7 +456,7 @@ If you omit the dump file name, it defaults to <processname>_<datetime>.dmp.
     ---------------------------
     Gives better context when stopping at an exception
 
-"   => Defrag Tools: #14 (SOS)  {{{2
+"   => Defrag Tools: #14 (SOS)  {{{{2
 .load
 .loadby
 .unload
@@ -466,7 +477,7 @@ lm m *clr*
 dv                       -> view arguments
 dt                       -> view argument types
 
-"   => Defrag Tools: #15 - WinDbg - Bugcheck  {{{2
+"   => Defrag Tools: #15 - WinDbg - Bugcheck  {{{{2
 
   ----------
   NotMyFault
@@ -475,7 +486,7 @@ dt                       -> view argument types
   Just start as administrator and choose an option.
   Note: SYMPATH aanpassen om NotMyFault\symbols\x(86|64) toe te voegen
 
-"   => Defrag Tools: #20 - WinDbg - Basic Commands {{{2
+"   => Defrag Tools: #20 - WinDbg - Basic Commands {{{{2
 .cls                    Clear Screen
 
 -------------------------------------------------
@@ -533,13 +544,13 @@ lm                      The lm command displays the specified loaded modules. Th
 !tls                    The !tls extension displays a thread local storage (TLS) slot.
 !runaway 7              The !runaway extension displays information about the time consumed by each thread
 
-"   => Defrag Tools: #21 - Windbg - Memory {{{2
+"   => Defrag Tools: #21 - Windbg - Memory {{{{2
 !address -summary       The !address extension displays information about the memory that the target process or target computer uses.
 !address <addr>
 !vprot <addr>           More or less the same as !address
 !mapped_file <addr>     The !mapped_file extension displays the name of the file that backs the file mapping that contains a specified address.
 
-"   => Defrag Tools: #22 - Windbg - Memory (kernel) {{{2
+"   => Defrag Tools: #22 - Windbg - Memory (kernel) {{{{2
 livekd io windbg
 ----------------
 !vm                     The !vm extension displays summary information about virtual memory use statistics on the target system.
@@ -556,10 +567,10 @@ livekd io windbg
 !pool <addr> 2
 !pte
 
-"   => Defrag Tools: #23 - Windows 8 SDK {{{2
+"   => Defrag Tools: #23 - Windows 8 SDK {{{{2
 Installatie van de Windows 8 debugging Toolkit
 
-"   => Defrag Tools: #24 - Windbg - Critical Sections {{{2
+"   => Defrag Tools: #24 - Windbg - Critical Sections {{{{2
 ~*k                     Show stack of all threads.
 ~*kv
 ~
@@ -568,7 +579,7 @@ Installatie van de Windows 8 debugging Toolkit
 !cs <pointer>
 !locks                  The !locks extension in Ntsdexts.dll displays a list of critical sections associated with the current process.
 
-"   => Defrag Tools: #25 - Windbg - Events {{{2
+"   => Defrag Tools: #25 - Windbg - Events {{{{2
 
   ------------------------------------------------------------------
   http://blogs.msdn.com/b/oldnewthing/archive/2006/06/22/642849.aspx
@@ -595,7 +606,7 @@ dp <addr>
 !uniqstack
 !findstack <text>
 
-"   => Defrag Tools: #26 - Windbg - Semaphores, Mutexes and Timers {{{2
+"   => Defrag Tools: #26 - Windbg - Semaphores, Mutexes and Timers {{{{2
 This installment goes over the commands used to diagnose Semaphores, Mutexes and (Waitable) Timers in a user mode application. For timers, we delve deep in to the kernel to gather more information about them. 
 We use these commands:
 
@@ -607,7 +618,7 @@ We use these commands:
     ub @rip
     dt nt!_KTHREAD <addr>
 
-"   => Defrag Tools: #27 - Windbg - Configure Kernel Debugging {{{2
+"   => Defrag Tools: #27 - Windbg - Configure Kernel Debugging {{{{2
 This installment goes over the cables and configuration steps required to set up kernel mode debugging.
 
 We use these BCDEdit commands:
@@ -638,7 +649,7 @@ In the debug session, we use these commands:
     g
 
 
-"   => Defrag Tools: #28 - Windbg - Scheduling {{{2
+"   => Defrag Tools: #28 - Windbg - Scheduling {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-28-WinDbg-Scheduling
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue looking at the Debugging Tools for Windows (in particular WinDbg). WinDbg is a debugger that supports user mode debugging of a process, or kernel mode debugging of a computer.
@@ -673,7 +684,7 @@ Timeline:
 [25:30] - Waiting Threads
 [26:52] - Summary
 
-"   => Defrag Tools: #29 - Windbg - ETW Logging {{{2
+"   => Defrag Tools: #29 - Windbg - ETW Logging {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-29-WinDbg-ETW-Logging
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue looking at the Debugging Tools for Windows (in particular WinDbg). WinDbg is a debugger that supports user mode debugging of a process, or kernel mode debugging of a computer.
@@ -704,7 +715,7 @@ Timeline:
 [23:40] - WPR adds the NT Kernel Logger
 [24:19] - 10min run-through of the data collected with the General, CPU and Disk providers
 
-"   => Defrag Tools: #30 - MCTS Windows Int {{{2
+"   => Defrag Tools: #30 - MCTS Windows Int {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/DefragTools30
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen review MCP exam 70-660 - MCTS Windows Internals.
@@ -727,7 +738,7 @@ Timeline:
 [45:17] - Debugging Windows
 [48:32] - Good Luck!
 
-"   => Defrag Tools: #31 - Zoomit {{{2
+"   => Defrag Tools: #31 - Zoomit {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-31-ZoomIt
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen walk you through Sysinternals ZoomIt. ZoomIt is a screen zoom and annotation tool for technical presentations that include application demonstrations. ZoomIt runs unobtrusively in the tray and activates with customizable hotkeys to zoom in on an area of the screen, move around while zoomed, and draw on the zoomed image.
@@ -750,7 +761,7 @@ Timeline:
     Zoomed - 1920x1200
     Actual - 480x300 
 
-"   => Defrag Tools: #32 - Desktops {{{2
+"   => Defrag Tools: #32 - Desktops {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-32-Desktops
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen walk you through Sysinternals Desktops. Desktops allows you to organize your applications on up to four virtual desktops. We go under the covers and show how Desktops fits in to the Session, Window Station and Desktop object/security model.
@@ -804,7 +815,7 @@ Session: 1
     Desktop: Disconnect
     Desktop: Winlogon
 
-"   => Defrag Tools: #33 - CLR GC - Part 1 {{{2
+"   => Defrag Tools: #33 - CLR GC - Part 1 {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-33-CLR-GC-Part-1
 
 In this episode of Defrag Tools, Andrew Richards, Maoni Stephens and Larry Larsen walk you through the CLR Garbage Collector. Maoni is the Principal developer for the GC on the CLR team.
@@ -832,7 +843,7 @@ Timeline:
 [31:15] - bp clr!WKS::GCHeap::RestartEE (Break after a GC)
 [35:30] - More next week...
 
-"   => Defrag Tools: #40 - WPT - WPR & WPA {{{2
+"   => Defrag Tools: #40 - WPT - WPR & WPA {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-40-WPT-WPR-WPA
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT).
@@ -859,7 +870,7 @@ Timeline:
 [28:40] - Column Customization
 [31:50] - More next week... and many more weeks to come!
 
-"   => Defrag Tools: #41 - WPT - Command Line {{{2
+"   => Defrag Tools: #41 - WPT - Command Line {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-41-WPT-Command-Line
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -902,7 +913,7 @@ xperf.exe -on Base -stackwalk Profile -BufferSize 1024 -MinBuffers 256 -MaxBuffe
 pause
 xperf.exe -stop -d result.etl
 
-"   => Defrag Tools: #42 - WPT - CPU Analysis {{{2
+"   => Defrag Tools: #42 - WPT - CPU Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-42-WPT-CPU-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -947,7 +958,7 @@ echo .
 
 xperf -stop -d cpu.etl
 
-"   => Defrag Tools: #43 - WPT - CPU Wait Analysis {{{2
+"   => Defrag Tools: #43 - WPT - CPU Wait Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-43-WPT-Wait-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -995,7 +1006,7 @@ echo .
 
 xperf -stop -d cpuwait.etl
 
-"   => Defrag Tools: #44 - WPT - DiskIO Analysis {{{2
+"   => Defrag Tools: #44 - WPT - DiskIO Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-44-WPT-DiskIO-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -1041,7 +1052,7 @@ echo .
 
 xperf -stop -d diskio.etl
 
-"   => Defrag Tools: #45 - WPT - File & Registry Analysis {{{2
+"   => Defrag Tools: #45 - WPT - File & Registry Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-45-WPT-File--Registry-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -1139,7 +1150,7 @@ echo .
 
 xperf -stop -d reghive.etl
 
-"   => Defrag Tools: #46 - WPT - Driver Analysis {{{2
+"   => Defrag Tools: #46 - WPT - Driver Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-46-WPT-Driver-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -1183,7 +1194,7 @@ echo .
 
 xperf -stop -d drivers.etl
 
-"   => Defrag Tools: #47 - WPT - Minifilter Analysis {{{2
+"   => Defrag Tools: #47 - WPT - Minifilter Analysis {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-47-WPT-MiniFilter-Analysis
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). Example xPerf scripts.
@@ -1226,7 +1237,7 @@ echo .
 
 xperf -stop -d minifilter.etl
 
-"   => Defrag Tools: #48 - WPT - Memory Analysis - Pool {{{2
+"   => Defrag Tools: #48 - WPT - Memory Analysis - Pool {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-48-WPT-Memory-Analysis-Pool
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). This is part 1 of 3 episodes on memory usage/leaks. Example xPerf scripts.
@@ -1269,7 +1280,7 @@ echo .
 
 xperf -stop -d pool.etl
 
-"   => Defrag Tools: #49 - WPT - Memory Analysis - VirtualAlloc {{{2
+"   => Defrag Tools: #49 - WPT - Memory Analysis - VirtualAlloc {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-49-WPT-Memory-Analysis-VirtualAlloc
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). This is part 2 of 3 episodes on memory usage/leaks. Example xPerf scripts.
@@ -1308,7 +1319,7 @@ echo .
 
 xperf -stop -d virtualalloc.etl
 
-"   => Defrag Tools: #50 - WPT - Memory Analysis - Heap {{{2
+"   => Defrag Tools: #50 - WPT - Memory Analysis - Heap {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-50-WPT-Memory-Analysis-Heap
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen continue walking you through the Windows Performance Toolkit (WPT). This is part 3 of 3 episodes on memory usage/leaks. Example xPerf scripts.
@@ -1377,16 +1388,16 @@ xperf -stop HeapSession -stop -d heap.etl
 rem Remove the process from IFEO
 reg delete "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%1.exe" /v TracingFlags /f
 
-"   => Defrag Tools: #51 - Support Diagnostics {{{2
+"   => Defrag Tools: #51 - Support Diagnostics {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-51-Support-Diagnostics
 
 In this two part series of Defrag Tools, Andrew Richards and Larry Larsen talk to Jeff Dailey, Director of diagnostics in Microsoft Support. In this episode, we cover the principals of data collection and analysis.
 
-"   => Defrag Tools: #52 - Microsoft Fix it Center Pro {{{2
+"   => Defrag Tools: #52 - Microsoft Fix it Center Pro {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-52-Microsoft-Fix-it-Center-Pro
 
 In this two part series of Defrag Tools, Andrew Richards and Larry Larsen talk to Jeff Dailey, Director of diagnostics in Microsoft Support. In this episode, we talk about Microsoft Fix it Center Pro.
-"   => Defrag Tools: #53 - Crashes, Hangs and Slow Performance {{{2
+"   => Defrag Tools: #53 - Crashes, Hangs and Slow Performance {{{{2
 channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-53-Crashes-Hangs-and-Slow-Performance
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen talk about Crashes, Hangs and Slow Performance. We talk about how to approach these issues and list the tools that can help you analyze them.
@@ -1414,7 +1425,7 @@ Timeline:
 [26:44] - Slow Performance
 [27:10] - Windows Performance Toolkit
 [29:09] - Email us your issues at defragtools@microsoft.com
-"   => Defrag Tools: #54 - IE Favorites Crash {{{2
+"   => Defrag Tools: #54 - IE Favorites Crash {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-54-IE-Favorites-Crash
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen show you the analysis of a crash. The crash happens when Favorites is clicked in Internet Explorer. We show Andrew's debugging and troubleshooting steps to solve the issue.
@@ -1443,7 +1454,7 @@ Timeline:
 [11:28] - Rename the key as the data seems to come from it (as seen in the dump)
 [12:22] - Success!
 [13:25] - Email us your issues at defragtools@microsoft.com
-"   => Defrag Tools: #55 - Bugcheck 0xAB Crash {{{2
+"   => Defrag Tools: #55 - Bugcheck 0xAB Crash {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-55-Bugcheck-0xAB-Crash
 
 In this episode of Defrag Tools, Chad Beeder, Andrew Richards and Larry Larsen show you the analysis of a Bugcheck 0xAB (by C9'er David Grainger). We show Chad's debugging and troubleshooting steps to solve the issue.
@@ -1464,7 +1475,7 @@ Timeline:
 [08:48] - August 2013 Update Rollup - KB2862768
 [09:00] - Display pointer trails - KB2865941
 [11:27] - Email us your issues at defragtools@microsoft.com
-"   => Defrag Tools: #56 - Explorer Hang {{{2
+"   => Defrag Tools: #56 - Explorer Hang {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-56-Explorer-Hang
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen show you the analysis of a hang. The hang happens in Explorer when Windows-E is pressed - the folder window never appears. We show Andrew's debugging steps to solve the issue.
@@ -1503,7 +1514,7 @@ Timeline:
 [27:50] - Summary
 [29:35] - Email us your issues at defragtools@microsoft.com
 
-"   => Defrag Tools: #57 - New Job, New Systems, 2 Questions and 2 Crashes {{{2
+"   => Defrag Tools: #57 - New Job, New Systems, 2 Questions and 2 Crashes {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-57-New-Job-New-Systems-2-Questions-and-2-Crashes
 
 In this episode of Defrag Tools, Andrew Richards, Chad Beeder and Larry Larsen talk about Andrew's new job, configuring new systems with SSDs and HDDs, answer two questions from a viewer (Barry), and debug two crashes.
