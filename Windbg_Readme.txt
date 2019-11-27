@@ -136,6 +136,11 @@ dt SOleTlsData 0x00f02b48
 !grep pCurrentCtx dt SOleTlsData 0x00f02b48
 !grep AptKind dt -r2 CObjectContext 0x00f03c58
 
+
+" => How to get PID/TID in a RPC call {{{{2
+kP
+dx -r2 ((combase!CSyncClientCall *)<address van pClientCall>)
+-> Zoek op dwPid en dwTid
 " => How to get the contents of a section object {{{{2
 "https://stackoverflow.com/questions/46745973/how-to-get-the-content-of-a-section-object-in-a-kernel-dump
 !process 0 0 ul3comm.exe
