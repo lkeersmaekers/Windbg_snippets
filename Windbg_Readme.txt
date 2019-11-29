@@ -103,6 +103,11 @@ bp calc!WinMain ; g
 " tracing only calc module from eip to some specific address and printing the return values (please note using arbitrary values as EndAddress may possibly corrupt the code by inserting 0xcc in middle of instruction ) 
 wt -l 2 -oR -m calc
 
+" => How to view stacktraces for heap allocations {{{{2
+" https://stackoverflow.com/questions/24451461/is-there-a-way-to-get-userstack-for-all-heap-userptr
+" Turn on Gflags -> Image File -> Create user mode stack trace database 
+.foreach /pS 4 /ps 3 (userptr {.shell -ci "!heap -p -all" find "busy" | find /V "*"}) { !heap -p -a ${userptr}};
+
 " => Breakpoints: How to dump all calls from a live debugging session {{{{2
 bm calc!* "k L1;g;"
 
