@@ -73,6 +73,16 @@ $script = 'PostmessageBreakpoint.script'
 gps powershell_ise | % { c:\apps\my\debuggers\cdb -p $_.ID -cfr PostmessageBreakpoint.script }
 
 " => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
+" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
+$afcScript = 'C:\Users\kelie\Desktop\AFCRequestAborted.script'
+'* disable all first/second chance exception handling'                                     | Out-File $afcScript -Encoding Ascii -Force
+'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                                  | Out-File $afcScript -Encoding Ascii -Force -Append
+'.logopen /t C:\\Users\\kelie\\Desktop\\afc_request_aborted.log'                           | Out-File $afcScript -Encoding Ascii -Force -Append
+'* add breakpoint, create unique dump file, clear breakpoints and just keep attached'      | Out-File $afcScript -Encoding Ascii -Force -Append
+'bu 004d9af9 ".dump /ma /u C:\\Users\\kelie\\Desktop\\afc_request_aborted.dmp;bc *;gc"'    | Out-File $afcScript -Encoding Ascii -Force -Append
+'* go'                                                                                     | Out-File $afcScript -Encoding Ascii -Force -Append
+'g;'                                                                                       | Out-File $afcScript -Encoding Ascii -Force -Append
+
 $ul3script = 'C:\Users\kelie\Desktop\UL3accRequestAborted.script'
 '* disable all first/second chance exception handling'                                     | Out-File $ul3script -Encoding Ascii -Force
 '.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                                  | Out-File $ul3script -Encoding Ascii -Force -Append
@@ -83,13 +93,23 @@ $ul3script = 'C:\Users\kelie\Desktop\UL3accRequestAborted.script'
 'g;'                                                                                       | Out-File $ul3script -Encoding Ascii -Force -Append
 
 while ($true) {
+    # Get the afc proces
+    gwmi -cl win32_process -filter 'commandline like "%forker:04%"' | % {
+        # test if the afc process is not being debugged already
+        if (@(gwmi -cl win32_process -filter "commandline like '%-p $($_.ProcessID) -cfr%'").Count -eq 0) {
+            # Attach a debugger
+            $argumentlist = "-p $($_.ProcessID) -cfr $($afcScript)"
+            Start-Process D:\ul3acc\userBackup\kelie\tools\debuggers_x86\cdb -ArgumentList $argumentlist
+            Write-Output "$(Get-Date) - Attached to $($_.ProcessID)"
+        }
+    }
     # Get all ul3acc processes with parent forker:04
     gwmi -cl win32_process -filter "ParentProcessID = $((gwmi -cl win32_process -filter 'commandline like "%forker:04%"').ProcessID)" | % {
         # test if the ul3acc process is not being debugged already
         if (@(gwmi -cl win32_process -filter "commandline like '%-p $($_.ProcessID) -cfr%'").Count -eq 0) {
             # Attach a debugger
             $argumentlist = "-p $($_.ProcessID) -cfr $($ul3script)"
-            Start-Process C:\Users\kelie\Desktop\debuggers_x86\cdb -ArgumentList $argumentlist
+            Start-Process D:\ul3acc\userBackup\kelie\tools\debuggers_x86\cdb -ArgumentList $argumentlist
             Write-Output "$(Get-Date) - Attached to $($_.ProcessID)"
         }
     }
