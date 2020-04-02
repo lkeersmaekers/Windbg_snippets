@@ -72,25 +72,146 @@ $script = 'PostmessageBreakpoint.script'
 'g;'                                            | Out-File $script -Encoding Ascii -Append -Force
 gps powershell_ise | % { c:\apps\my\debuggers\cdb -p $_.ID -cfr PostmessageBreakpoint.script }
 
-" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
-" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
-$afcScript = 'C:\Users\kelie\Desktop\AFCRequestAborted.script'
-'* disable all first/second chance exception handling'                                     | Out-File $afcScript -Encoding Ascii -Force
-'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                                  | Out-File $afcScript -Encoding Ascii -Force -Append
-'.logopen /t C:\\Users\\kelie\\Desktop\\afc_request_aborted.log'                           | Out-File $afcScript -Encoding Ascii -Force -Append
-'* add breakpoint, create unique dump file, clear breakpoints and just keep attached'      | Out-File $afcScript -Encoding Ascii -Force -Append
-'bu 004d9af9 ".dump /ma /u C:\\Users\\kelie\\Desktop\\afc_request_aborted.dmp;bc *;gc"'    | Out-File $afcScript -Encoding Ascii -Force -Append
-'* go'                                                                                     | Out-File $afcScript -Encoding Ascii -Force -Append
-'g;'                                                                                       | Out-File $afcScript -Encoding Ascii -Force -Append
+" => How to add breakpoints and dumps for ul3acc/afc {{{{2
+<#
+gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (get-date).AddHours(-10) | sls 'Creating'
+gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (get-date).AddHours(-10) | sls '^Breakpoint' | group -Property line, filename -NoElement | ft -a
+#>
 
-$ul3script = 'C:\Users\kelie\Desktop\UL3accRequestAborted.script'
-'* disable all first/second chance exception handling'                                     | Out-File $ul3script -Encoding Ascii -Force
-'.foreach(exc {sx}) {.catch{sxd ${exc}}}'                                                  | Out-File $ul3script -Encoding Ascii -Force -Append
-'.logopen /t C:\\Users\\kelie\\Desktop\\ul3acc_request_aborted.log'                        | Out-File $ul3script -Encoding Ascii -Force -Append
-'* add breakpoint, create unique dump file, clear breakpoints and just keep attached'      | Out-File $ul3script -Encoding Ascii -Force -Append
-'bu 00a1ab9d ".dump /ma /u C:\\Users\\kelie\\Desktop\\ul3acc_request_aborted.dmp;bc *;gc"' | Out-File $ul3script -Encoding Ascii -Force -Append
-'* go'                                                                                     | Out-File $ul3script -Encoding Ascii -Force -Append
-'g;'                                                                                       | Out-File $ul3script -Encoding Ascii -Force -Append
+
+$root = "D:\ul3acc\userBackup\kelie\debug\$((Get-Date).ToString('yyyyMMdd'))-SIM-HTTP500" # no spaces
+if (!(Test-Path $root)) {New-Item $root -ItemType Directory -Force}
+
+$afcScript = "$($root)\afc.script"
+$ul3script = "$($root)\ul3.script"
+
+$afcdump = $root -replace '\\', '\\'
+$ul3dump = $root -replace '\\', '\\'
+
+# afc script
+@'
+    ***** Disable Break on Exception
+    * Disable all first/second chance exception handling (https://stackoverflow.com/a/28308973/52598).
+    .foreach(exc {sx}) {.catch{sxd ${exc}}}
+
+    ***** Show Timestamps
+    * Turns on the display of time stamp information.
+    .echotimestamps 1'
+
+    ***** Logfile
+    * Send a copy of the events and commands from the Debugger Command window to a new log file.
+    .logopen /t <<afcdump>>\\afc_request_aborted.log
+
+    ***** Breakpoint/Dump
+    * bp    - Add a breakpoint on address 004d9af9
+    * .dump - Create a dump file
+    *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *            /u  Appends the date, time, and PID to the dump file name
+    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    bp 004d9af9 ".dump /mA /u <<afcdump>>\\afc_request_aborted.dmp;gc"
+
+    ***** Exception/Dump
+    * sx-      - Does not change the handling status or the break status of the specified exception or event.
+    * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
+    * .dump    - Create a dump file
+    *             /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *             /u  Appends the date, time, and PID to the dump file name
+    * 40080201 - The exception number that the command acts on, in the current radix
+    * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    sx- -c ".dump /mA /u <<afcdump>>\\afc_40080201.dmp;gc" 40080201
+
+    ***** Exception/Dump
+    * sx-      - Does not change the handling status or the break status of the specified exception or event.
+    * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
+    * .dump    - Create a dump file
+    *             /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *             /u  Appends the date, time, and PID to the dump file name
+    * 80010108 - The exception number that the command acts on, in the current radix
+    * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    sx- -c ".dump /mA /u <<afcdump>>\\afc_80010108.dmp;gc" 80010108
+
+    ***** Breakpoint/Exception status/Go
+    * bl - List existing breakpoints
+    * sx - Displays the list of exceptions for the current process and the list of all nonexception events and displays the default behavior of the debugger for each exception and event.
+    * g  - Start executing the process
+    bl;sx;g
+'@ -replace '<<afcdump>>', $afcdump | Out-File $afcScript -Encoding Ascii -Force
+
+
+# ul3acc script
+@'
+    ***** Disable Break on Exception
+    * Disable all first/second chance exception handling (https://stackoverflow.com/a/28308973/52598).
+    .foreach(exc {sx}) {.catch{sxd ${exc}}}
+
+    ***** Show Timestamps
+    * Turns on the display of time stamp information.
+    .echotimestamps 1'
+
+    ***** Logfile
+    * Send a copy of the events and commands from the Debugger Command window to a new log file.
+    .logopen /t <<ul3dump>>\\ul3acc_request_aborted.log
+
+    ***** Breakpoint/Dump
+    * bp    - Add a breakpoint on address 00a1ab9d
+    * .dump - Create a dump file
+    *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *            /u  Appends the date, time, and PID to the dump file name
+    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    bp 00a1ab9d ".dump /ma /u <<ul3dump>>\\ul3acc_request_aborted.dmp;gc"
+
+    ***** Exception/Dump
+    * sx-      - Does not change the handling status or the break status of the specified exception or event.
+    * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
+    * .dump    - Create a dump file
+    *             /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *             /u  Appends the date, time, and PID to the dump file name
+    * 80004035 - The exception number that the command acts on, in the current radix
+    * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    sx- -c ".dump /ma /u <<ul3dump>>\\ul3acc_80004035.dmp;gc" 80004035
+
+    ***** Event/Dump
+    * sx-      - Does not change the handling status or the break status of the specified exception or event.
+    * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
+    * .dump    - Create a dump file
+    *             /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
+    *             /u  Appends the date, time, and PID to the dump file name
+    * av       - The event that the command acts on
+    * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
+    sx- -c ".dump /ma /u <<ul3dump>>\\ul3acc_access_violation.dmp;gc" av
+
+    ***** Load Extension
+    * Load the pde extension DLL into the debugger
+    .load D:\ul3acc\userBackup\kelie\tools\debuggers_x86\winext\pde
+
+    ***** Breakpoint/Log
+    * bp    - Add a breakpoint on address 00520ad8
+    * .echo - Display a comment string
+    * ~.    - The current thread
+    * r     - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
+    * !dpx  - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
+    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bp 00520ad8 ".echo Breakpoint 00520ad8;~.;r;!dpx;gc"
+
+    ***** Breakpoint/Log
+    * bu    - Add a deferred o unresolved breakpoint
+    * .echo - Display a comment string
+    * ~.    - The current thread
+    * r     - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
+    * !dpx  - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
+    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bu cdosys!DllCanUnloadNow ".echo Breakpoint cdosys!DllCanUnloadNow;~.;r;!dpx;gc"
+    bu cdosys!DllGetClassObject ".echo Breakpoint cdosys!DllGetClassObject;~.;r;!dpx;gc"
+    bu cdosys!DllRegisterServer ".echo Breakpoint cdosys!DllRegisterServer;~.;r;!dpx;gc"
+    bu cdosys!DllUnregisterServer ".echo Breakpoint cdosys!DllUnregisterServer;~.;r;!dpx;gc"
+
+    ***** Breakpoint/Exception status/Go
+    * bl - List existing breakpoints
+    * sx - Displays the list of exceptions for the current process and the list of all nonexception events and displays the default behavior of the debugger for each exception and event.
+    * g  - Start executing the process
+    bl;sx;g
+
+'@ -replace '<<ul3dump>>', $ul3dump | Out-File $ul3script -Encoding Ascii -Force
 
 while ($true) {
     # Get the afc proces
@@ -115,6 +236,8 @@ while ($true) {
     }
     Start-Sleep -Seconds 5
 }
+
+" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
 
 " => How to trace all calls from a process {{{{2
 windbg calc
