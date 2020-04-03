@@ -81,12 +81,10 @@ gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (g
 
 $root = "D:\ul3acc\userBackup\kelie\debug\$((Get-Date).ToString('yyyyMMdd'))-SIM-HTTP500" # no spaces
 if (!(Test-Path $root)) {New-Item $root -ItemType Directory -Force}
+$escapedRoot = $root -replace '\\', '\\'
 
 $afcScript = "$($root)\afc.script"
 $ul3script = "$($root)\ul3.script"
-
-$afcdump = $root -replace '\\', '\\'
-$ul3dump = $root -replace '\\', '\\'
 
 # afc script
 @'
@@ -100,7 +98,7 @@ $ul3dump = $root -replace '\\', '\\'
 
     ***** Logfile
     * Send a copy of the events and commands from the Debugger Command window to a new log file.
-    .logopen /t <<afcdump>>\\afc_request_aborted.log
+    .logopen /t <<escapedRoot>>\\afc_trace.log
 
     ***** Breakpoint/Dump
     * bp    - Add a breakpoint on address 004d9af9
@@ -108,7 +106,7 @@ $ul3dump = $root -replace '\\', '\\'
     *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
     *            /u  Appends the date, time, and PID to the dump file name
     * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    bp 004d9af9 ".dump /mA /u <<afcdump>>\\afc_request_aborted.dmp;gc"
+    bp 004d9af9 ".dump /mA /u <<escapedRoot>>\\afc_request_aborted.dmp;gc"
 
     ***** Exception/Dump
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
@@ -118,7 +116,7 @@ $ul3dump = $root -replace '\\', '\\'
     *             /u  Appends the date, time, and PID to the dump file name
     * 40080201 - The exception number that the command acts on, in the current radix
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    sx- -c ".dump /mA /u <<afcdump>>\\afc_40080201.dmp;gc" 40080201
+    sx- -c ".dump /mA /u <<escapedRoot>>\\afc_40080201.dmp;gc" 40080201
 
     ***** Exception/Dump
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
@@ -128,14 +126,14 @@ $ul3dump = $root -replace '\\', '\\'
     *             /u  Appends the date, time, and PID to the dump file name
     * 80010108 - The exception number that the command acts on, in the current radix
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    sx- -c ".dump /mA /u <<afcdump>>\\afc_80010108.dmp;gc" 80010108
+    sx- -c ".dump /mA /u <<escapedRoot>>\\afc_80010108.dmp;gc" 80010108
 
     ***** Breakpoint/Exception status/Go
     * bl - List existing breakpoints
     * sx - Displays the list of exceptions for the current process and the list of all nonexception events and displays the default behavior of the debugger for each exception and event.
     * g  - Start executing the process
     bl;sx;g
-'@ -replace '<<afcdump>>', $afcdump | Out-File $afcScript -Encoding Ascii -Force
+'@ -replace '<<escapedRoot>>', $escapedRoot | Out-File $afcScript -Encoding Ascii -Force
 
 
 # ul3acc script
@@ -150,7 +148,7 @@ $ul3dump = $root -replace '\\', '\\'
 
     ***** Logfile
     * Send a copy of the events and commands from the Debugger Command window to a new log file.
-    .logopen /t <<ul3dump>>\\ul3acc_request_aborted.log
+    .logopen /t <<escapedRoot>>\\ul3acc_trace.log
 
     ***** Breakpoint/Dump
     * bp    - Add a breakpoint on address 00a1ab9d
@@ -158,7 +156,7 @@ $ul3dump = $root -replace '\\', '\\'
     *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
     *            /u  Appends the date, time, and PID to the dump file name
     * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    bp 00a1ab9d ".dump /ma /u <<ul3dump>>\\ul3acc_request_aborted.dmp;gc"
+    bp 00a1ab9d ".dump /ma /u <<escapedRoot>>\\ul3acc_request_aborted.dmp;gc"
 
     ***** Exception/Dump
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
@@ -168,7 +166,7 @@ $ul3dump = $root -replace '\\', '\\'
     *             /u  Appends the date, time, and PID to the dump file name
     * 80004035 - The exception number that the command acts on, in the current radix
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    sx- -c ".dump /ma /u <<ul3dump>>\\ul3acc_80004035.dmp;gc" 80004035
+    sx- -c ".dump /ma /u <<escapedRoot>>\\ul3acc_80004035.dmp;gc" 80004035
 
     ***** Event/Dump
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
@@ -178,7 +176,7 @@ $ul3dump = $root -replace '\\', '\\'
     *             /u  Appends the date, time, and PID to the dump file name
     * av       - The event that the command acts on
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
-    sx- -c ".dump /ma /u <<ul3dump>>\\ul3acc_access_violation.dmp;gc" av
+    sx- -c ".dump /ma /u <<escapedRoot>>\\ul3acc_access_violation.dmp;gc" av
 
     ***** Load Extension
     * Load the pde extension DLL into the debugger
@@ -211,7 +209,7 @@ $ul3dump = $root -replace '\\', '\\'
     * g  - Start executing the process
     bl;sx;g
 
-'@ -replace '<<ul3dump>>', $ul3dump | Out-File $ul3script -Encoding Ascii -Force
+'@ -replace '<<escapedRoot>>', $escapedRoot | Out-File $ul3script -Encoding Ascii -Force
 
 while ($true) {
     # Get the afc proces
