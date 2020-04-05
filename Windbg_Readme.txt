@@ -78,7 +78,6 @@ gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (g
 gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (get-date).AddHours(-10) | sls '^Breakpoint' | group -Property line, filename -NoElement | ft -a
 #>
 
-
 $root = "D:\ul3acc\userBackup\kelie\debug\$((Get-Date).ToString('yyyyMMdd'))-SIM-HTTP500" # no spaces
 if (!(Test-Path $root)) {New-Item $root -ItemType Directory -Force}
 $escapedRoot = $root -replace '\\', '\\'
@@ -183,25 +182,51 @@ $ul3script = "$($root)\ul3.script"
     .load D:\ul3acc\userBackup\kelie\tools\debuggers_x86\winext\pde
 
     ***** Breakpoint/Log
-    * bp    - Add a breakpoint on address 00520ad8
-    * .echo - Display a comment string
-    * ~.    - The current thread
-    * r     - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
-    * !dpx  - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
-    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bp 00520ad8 ".echo Breakpoint 00520ad8;~.;r;!dpx;gc"
+    * bp        - Add a breakpoint on address 00520ad8
+    * .echotime - current date/time
+    * .echo     - Display a comment string
+    * ~.        - The current thread
+    * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
+    * !dpx      - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
+    * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bp 00520ad8 ".echotime;.echo Breakpoint 00520ad8;~.;r;!dpx;gc"
 
     ***** Breakpoint/Log
-    * bu    - Add a deferred o unresolved breakpoint
-    * .echo - Display a comment string
-    * ~.    - The current thread
-    * r     - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
-    * !dpx  - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
-    * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bu cdosys!DllCanUnloadNow ".echo Breakpoint cdosys!DllCanUnloadNow;~.;r;!dpx;gc"
-    bu cdosys!DllGetClassObject ".echo Breakpoint cdosys!DllGetClassObject;~.;r;!dpx;gc"
-    bu cdosys!DllRegisterServer ".echo Breakpoint cdosys!DllRegisterServer;~.;r;!dpx;gc"
-    bu cdosys!DllUnregisterServer ".echo Breakpoint cdosys!DllUnregisterServer;~.;r;!dpx;gc"
+    * bp        - Add a breakpoint on address 004bf9f8 .if the eax register equals nil
+    *             Het lijkt er op dat we op address 004bc65e een AV krijgen owv de functie call op address 004bfa2a in deze 004bf9f8 functie
+    *             In de AV functie 004bc65e krijgen we in EDX een 00000000 door. Deze komt wss. van param_1 (eax) die in 004bf9f8 dan ook al 00000000 is
+    *             Als deze theorie klopt, moeten we weer verder kijken waarom param_1 in 004bf9f8 nil is.
+    *             NOTE: method wordt zéér veel gecalled (13.341 Breakpoint 004bf9f8, ul3acc_trace_1d20_2020-04-04_21-21-34-807.log).
+    *             NOTE2: param_1 van 004bf9f8 is idd ook nil. Nog verder naar callers kijken waarom die nil doorgeven!
+    *                Debugger (not debuggee) time: Sat Apr  4 13:02:52.514 2020 (UTC + 2:00)
+    *                Breakpoint 004bf9f8
+    *                eax=00000000 ebx=015a3280 ecx=0000002c edx=00520ad8 esi=00000000 edi=01c3d7a0 eip=004bf9f8 esp=0019d6dc ebp=0019d6f8
+    * .echotime - current date/time
+    * .echo     - Display a comment string
+    * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
+    * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bp 004bf9f8 ".if (@eax = 0x00000000) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+
+    ***** Breakpoint/Log
+    * bp        - Add a breakpoint on address 004bc65e .if the eax register equals nil
+    *             LAST_CONTROL_TRANSFER is van f685338b naar 004bc65e. f685338b is echter een adres op de heap normaal?!
+    *             NOTE: method wordt zéér veel gecalled (1.312.020 Breakpoint 004bc65e, ul3acc_trace_1d20_2020-04-04_21-21-34-807.log)
+    * .echotime - current date/time
+    * .echo     - Display a comment string
+    * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
+    * kbnf 2    - Display the stack frame of the given thread, together with related information
+    * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bp 004bc65e ".if (@eax = 0x00000000) {.echotime;.echo Breakpoint 004bc65e;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+
+    ***** Breakpoint/Log
+    * bu        - Add a deferred or unresolved breakpoint
+    * .echotime - current date/time
+    * .echo     - Display a comment string
+    * ~.        - The current thread
+    * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
+    * !dpx      - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
+    * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
+    bm cdosys!* ".echotime;.echo Breakpoint cdosys!*;~.;r;!dpx;gc"
 
     ***** Breakpoint/Exception status/Go
     * bl - List existing breakpoints
@@ -234,19 +259,18 @@ while ($true) {
     }
     Start-Sleep -Seconds 5
 }
-
 " => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
 
 " => How to trace all calls from a process {{{{2
 windbg calc
-"skipping all the ldrint system calls 
+"skipping all the ldrint system calls
 bp calc!WinMain ; g
-" tracing only calc module from eip to some specific address and printing the return values (please note using arbitrary values as EndAddress may possibly corrupt the code by inserting 0xcc in middle of instruction ) 
+" tracing only calc module from eip to some specific address and printing the return values (please note using arbitrary values as EndAddress may possibly corrupt the code by inserting 0xcc in middle of instruction )
 wt -l 2 -oR -m calc
 
 " => How to view stacktraces for heap allocations {{{{2
 " https://stackoverflow.com/questions/24451461/is-there-a-way-to-get-userstack-for-all-heap-userptr
-" Turn on Gflags -> Image File -> Create user mode stack trace database 
+" Turn on Gflags -> Image File -> Create user mode stack trace database
 .foreach /pS 4 /ps 3 (userptr {.shell -ci "!heap -p -all" find "busy" | find /V "*"}) { !heap -p -a ${userptr}};
 
 " => Breakpoints: How to dump all calls from a live debugging session {{{{2
@@ -383,10 +407,10 @@ x /t /v /n notepad!*
 
 .load cmkd.dll
 
-!cmkd.help 
+!cmkd.help
 
 !stack
-The !stack command displays registers based parameters passed to x64 functions. 
+The !stack command displays registers based parameters passed to x64 functions.
 
 "   => Delphi Objecten Windbg Scripts {{{{2
 ------------------------------------------------------------------------------------------------------
@@ -394,9 +418,9 @@ Find the base address en base of code for a module(executable)
 https://stackoverflow.com/questions/38205106/resolve-address-of-accessviolation-in-the-map-file
 ------------------------------------------------------------------------------------------------------
 De addressen in een .map file + image base address + base of code zijn deze die in de stacktrace (kvnf) getoond worden.
-Usually the load address of a process is $400000 (the actual value is defined in the Project Options and is $400000 by default), but that may be different at runtime due to various reasons, such as re-basing. 
-Once you determine the actual load address, you need to include the actual offset of the code segment within the process. 
-That offset is usually $1000 (the actual value is defined in the compiled executable's PE header). 
+Usually the load address of a process is $400000 (the actual value is defined in the Project Options and is $400000 by default), but that may be different at runtime due to various reasons, such as re-basing.
+Once you determine the actual load address, you need to include the actual offset of the code segment within the process.
+That offset is usually $1000 (the actual value is defined in the compiled executable's PE header).
 So, to map a memory address at runtime to an address in the .map file, you usually subtract $401000 from the runtime memory address. Values may be different!
 
 !dh <module> -f
@@ -421,7 +445,7 @@ dW poi(poi(poi(poi(0018f4bc)))-38)+1 L16  TList...
   da poi(poi(poi(poi(0018f4bc)))-38)+1 Points to the non-Unicode string returned by TObject.ClassName, internally known as Self.vmtClassName.
 
   Dereference and dump 400 (1600/4) stack pointers
-  starting from 0x0018f4bc 
+  starting from 0x0018f4bc
   (Use -38 for Delphi XE2. Use -2c for Delphi 7)
   ----------------------------------------------
 r? @$t0 = @esp
@@ -461,7 +485,7 @@ VMT Layout Delphi 7
 ----------------------------------------------------------------
 http://marc.durdin.net/2011/12/windbg-and-delphi-exceptions.html
 ----------------------------------------------------------------
-When debugging a Delphi XE2 app in WinDBG, NTSD or a related debugger, it is very helpful to be able to display the actual 
+When debugging a Delphi XE2 app in WinDBG, NTSD or a related debugger, it is very helpful to be able to display the actual
 class name and error message from an exception in the debugger.  The following script will do that for you automatically:
 
 Delphi XE2 : sxe -c "da poi(poi(poi(ebp+1c))-38)+1 L16;du /c 100 poi(poi(ebp+1c)+4)" 0EEDFADE
@@ -560,7 +584,7 @@ usage: procdump [-64] [[-c|-cl CPU usage] [-u] [-s seconds]] [-n exceeds] [-e [1
    -t      Write a dump when the process terminates.
    -u      Treat CPU usage relative to a single core.
    -w      Wait for the specified process to launch if it's not running.
-   -x      Launch the specified image with optional arguments. 
+   -x      Launch the specified image with optional arguments.
            If it is a Modern Application or Package, ProcDump will start
            on the next activation (only).
 
@@ -575,7 +599,7 @@ If you omit the dump file name, it defaults to <processname>_<datetime>.dmp.
 "   => Defrag Tools: #13  {{{{2
 -------------------------------------------------------------------
 -- https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-13-WinDbg
--- 
+--
 -- Note: rename D:\Traveler in files to install folder of "my"
 -------------------------------------------------------------------
 \my\debuggers\windbg -IA
@@ -649,7 +673,7 @@ vertarget               The vertarget command displays the current version of th
 ||                      The double vertical bar (||) command prints status for the specified system or for all systems that you are currently debugging.
 .sympath                The .sympath command changes the default path of the host debugger for symbol search.
 .srcpath                The .srcpath and .lsrcpath commands set or display the source file search path.
-.exepath                The .exepath command sets or displays the executable file search path. 
+.exepath                The .exepath command sets or displays the executable file search path.
   --> Een minidump bevat niet de volledige image. .exepath kan dan gebruikt worden om de volledige image in te laden.
 .extpath                The .extpath command sets or displays the extension DLL search path.
 .chain                  The .chain command lists all loaded debugger extensions in their default search order.
@@ -735,16 +759,16 @@ Installatie van de Windows 8 debugging Toolkit
   ------------------------------------------------------------------
   http://blogs.msdn.com/b/oldnewthing/archive/2006/06/22/642849.aspx
   ------------------------------------------------------------------
-  Manual-reset events are easy to understand: If the event is clear, then a wait on the event is not satisfied. 
-  If the event is set, then a wait on the event succeeds. Doesn't matter how many people are waiting for the event; 
+  Manual-reset events are easy to understand: If the event is clear, then a wait on the event is not satisfied.
+  If the event is set, then a wait on the event succeeds. Doesn't matter how many people are waiting for the event;
   they all behave the same way, and the state of the event is unaffected by how many people are waiting for it.
 
-  Auto-reset events are more confusing. Probably the easiest way to think about them is as if they were semaphores with a maximum token count of one. 
-  If the event is clear, then a wait on the event is not satisfied. If the event is set, then one waiter succeeds and the event is reset; the other waiters keep waiting. 
+  Auto-reset events are more confusing. Probably the easiest way to think about them is as if they were semaphores with a maximum token count of one.
+  If the event is clear, then a wait on the event is not satisfied. If the event is set, then one waiter succeeds and the event is reset; the other waiters keep waiting.
   (And from our discussion of PulseEvent, you already know that it is indeterminate which waiter will be released if there is more than one.)
 
-  The gotcha with auto-reset events is the case where you set an event that is already set. Since an event has only two states (set and reset), setting an event that is already set has no effect. 
-  If you are using an event to control a resource producer/consumer model, then the "setting an event that is already set" case will result in you appearing to "lose" a token. 
+  The gotcha with auto-reset events is the case where you set an event that is already set. Since an event has only two states (set and reset), setting an event that is already set has no effect.
+  If you are using an event to control a resource producer/consumer model, then the "setting an event that is already set" case will result in you appearing to "lose" a token.
 
 ~*k
 ~*kv
@@ -758,7 +782,7 @@ dp <addr>
 !findstack <text>
 
 "   => Defrag Tools: #26 - Windbg - Semaphores, Mutexes and Timers {{{{2
-This installment goes over the commands used to diagnose Semaphores, Mutexes and (Waitable) Timers in a user mode application. For timers, we delve deep in to the kernel to gather more information about them. 
+This installment goes over the commands used to diagnose Semaphores, Mutexes and (Waitable) Timers in a user mode application. For timers, we delve deep in to the kernel to gather more information about them.
 We use these commands:
 
     !handle <handle> <mask>
@@ -779,7 +803,7 @@ We use these BCDEdit commands:
     bcdedit /dbgsettings 1394 channel:42
     bcdedit /dbgsettings net hostip:192.168.0.10 port:50000 key:a.b.c.d
     bcdedit /debug on
-    bcdedit /debug off 
+    bcdedit /debug off
 
 In the debug session, we use these commands:
 
@@ -814,7 +838,7 @@ We use these commands:
     !ready
     !dpcs
     !thread <addr> 17
-    !thread -1 17   (current thread) 
+    !thread -1 17   (current thread)
 
 Make sure you watch Defrag Tools Episode #1 and Defrag Tools Episode #23 for instructions on how to get the Debugging Tools for Windows and how to set the required environment variables for symbol and source code resolution.
 
@@ -847,7 +871,7 @@ We use these commands:
     !wmitrace.strdump
     !wmitrace.logsave 0xNN c:\example.etl
     !wmitrace.eventlogdump 0xNN
-    !wmitrace.help 
+    !wmitrace.help
 
 Make sure you watch Defrag Tools Episode #1 and Defrag Tools Episode #23 for instructions on how to get the Debugging Tools for Windows and how to set the required environment variables for symbol and source code resolution. This episode shows how install the Windows Performance Toolkit.
 
@@ -910,7 +934,7 @@ Timeline:
 * Zoomed to 480x300 on a 1920x1200 screen, the file sizes are:
 
     Zoomed - 1920x1200
-    Actual - 480x300 
+    Actual - 480x300
 
 "   => Defrag Tools: #32 - Desktops {{{{2
 http://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-32-Desktops
@@ -1240,19 +1264,19 @@ Summary
 Example: "xperf - Collect FileIO.cmd"
 
 @echo off
-echo Press a key when ready to start... 
+echo Press a key when ready to start...
 pause
 
-echo . 
-echo ...Capturing... 
+echo .
+echo ...Capturing...
 echo .
 
 xperf -on PROC_THREAD+LOADER+FILENAME+FILE_IO+FILE_IO_INIT -stackwalk FileCreate+FileCleanup+FileClose+FileRead+FileWrite+FileSetInformation+FileDelete+FileRename+FileDirEnum+FileFlush+FileQueryInformation -BufferSize 1024 -MinBuffers 256 -MaxBuffers 256 -MaxFile 256 -FileMode Circular
 
-echo Press a key when you want to stop... 
-pause 
-echo . 
-echo ...Stopping... 
+echo Press a key when you want to stop...
+pause
+echo .
+echo ...Stopping...
 echo .
 
 xperf -stop -d fileio.etl
@@ -1266,15 +1290,15 @@ echo Press a key when ready to start...
 pause
 
 echo .
-echo ...Capturing... 
+echo ...Capturing...
 echo .
 
 xperf -on PROC_THREAD+LOADER+REGISTRY -stackwalk RegQueryKey+RegEnumerateKey+RegEnumerateValueKey+RegDeleteKey+RegCreateKey+RegOpenKey+RegSetValue+RegDeleteValue+RegQueryValue+RegQueryMultipleValue+RegSetInformation+RegFlush+RegKcbCreate+RegKcbDelete+RegVirtualize+RegCloseKey -BufferSize 1024 -MinBuffers 256 -MaxBuffers 256 -MaxFile 256 -FileMode Circular
 
 echo Press a key when you want to stop...
-pause 
-echo . 
-echo ...Stopping... 
+pause
+echo .
+echo ...Stopping...
 echo .
 
 xperf -stop -d registry.etl
@@ -1283,20 +1307,20 @@ xperf -stop -d registry.etl
 
 Example: "xperf - Collect RegHive.cmd"
 
-@echo off 
-echo Press a key when ready to start... 
+@echo off
+echo Press a key when ready to start...
 pause
 
-echo . 
-echo ...Capturing... 
+echo .
+echo ...Capturing...
 echo .
 
 xperf -on PROC_THREAD+LOADER+REG_HIVE -stackwalk RegHiveInit+RegHiveDestroy+RegHiveLink+RegHiveDirty -BufferSize 1024 -MinBuffers 256 -MaxBuffers 256 -MaxFile 256 -FileMode Circular
 
-echo Press a key when you want to stop... 
-pause 
-echo . 
-echo ...Stopping... 
+echo Press a key when you want to stop...
+pause
+echo .
+echo ...Stopping...
 echo .
 
 xperf -stop -d reghive.etl
