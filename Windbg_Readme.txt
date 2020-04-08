@@ -72,7 +72,9 @@ $script = 'PostmessageBreakpoint.script'
 'g;'                                            | Out-File $script -Encoding Ascii -Append -Force
 gps powershell_ise | % { c:\apps\my\debuggers\cdb -p $_.ID -cfr PostmessageBreakpoint.script }
 
-" => How to add breakpoints and dumps for ul3acc/afc {{{{2
+" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
+"    How to patch in memory procedure to be able add an unconditional breakpoint to not impact performance
+"    How to add conditional breakpoints
 <#
 gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (get-date).AddHours(-10) | sls 'Creating'
 gci d:\ul3acc\userbackup\kelie\debug\*.log -recurse | where lastwritetime -gt (get-date).AddHours(-10) | sls '^Breakpoint' | group -Property line, filename -NoElement | ft -a
@@ -259,7 +261,6 @@ while ($true) {
     }
     Start-Sleep -Seconds 5
 }
-" => How to add a breakpoint on an address and create a dumpfile using a script file {{{{2
 
 " => How to trace all calls from a process {{{{2
 windbg calc
