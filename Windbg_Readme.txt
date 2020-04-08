@@ -97,7 +97,7 @@ $ul3script = "$($root)\ul3.script"
     * Turns on the display of time stamp information.
     .echotimestamps 1'
 
-    ***** Logfile
+    ***** Create a Logfile
     * Send a copy of the events and commands from the Debugger Command window to a new log file.
     .logopen /t <<escapedRoot>>\\afc_trace.log
 
@@ -109,7 +109,7 @@ $ul3script = "$($root)\ul3.script"
     * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
     bp 004d9af9 ".dump /mA /u <<escapedRoot>>\\afc_request_aborted.dmp;gc"
 
-    ***** Exception/Dump
+    ***** Exception/Dump on exception number 40080201
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
     * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
     * .dump    - Create a dump file
@@ -119,7 +119,7 @@ $ul3script = "$($root)\ul3.script"
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
     sx- -c ".dump /mA /u <<escapedRoot>>\\afc_40080201.dmp;gc" 40080201
 
-    ***** Exception/Dump
+    ***** Exception/Dump on exception number 80010108
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
     * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
     * .dump    - Create a dump file
@@ -147,11 +147,11 @@ $ul3script = "$($root)\ul3.script"
     * Turns on the display of time stamp information.
     .echotimestamps 1'
 
-    ***** Logfile
+    ***** Create a Logfile
     * Send a copy of the events and commands from the Debugger Command window to a new log file.
     .logopen /t <<escapedRoot>>\\ul3acc_trace.log
 
-    ***** Breakpoint/Dump
+    ***** Breakpoint/Dump on address 00a1ab9d 
     * bp    - Add a breakpoint on address 00a1ab9d
     * .dump - Create a dump file
     *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
@@ -159,7 +159,7 @@ $ul3script = "$($root)\ul3.script"
     * gc    - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
     bp 00a1ab9d ".dump /ma /u <<escapedRoot>>\\ul3acc_request_aborted.dmp;gc"
 
-    ***** Exception/Dump
+    ***** Exception/Dump on exception number 80004035
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
     * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
     * .dump    - Create a dump file
@@ -169,7 +169,7 @@ $ul3script = "$($root)\ul3.script"
     * gc       - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint
     sx- -c ".dump /ma /u <<escapedRoot>>\\ul3acc_80004035.dmp;gc" 80004035
 
-    ***** Event/Dump
+    ***** Event/Dump on exception AV
     * sx-      - Does not change the handling status or the break status of the specified exception or event.
     * -c       - Specifies a command that is executed if the exception or event occurs. This command is executed when the first chance to handle this exception occurs, regardless of whether this exception breaks into the debugger.
     * .dump    - Create a dump file
@@ -183,7 +183,7 @@ $ul3script = "$($root)\ul3.script"
     * Load the pde extension DLL into the debugger
     .load D:\ul3acc\userBackup\kelie\tools\debuggers_x86\winext\pde
 
-    ***** Breakpoint/Log
+    ***** Breakpoint/Log on address 00520ad8 (uitgeblankt. wss niet relevant)
     * bp        - Add a breakpoint on address 00520ad8
     * .echotime - current date/time
     * .echo     - Display a comment string
@@ -191,10 +191,10 @@ $ul3script = "$($root)\ul3.script"
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
     * !dpx      - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bp 00520ad8 ".echotime;.echo Breakpoint 00520ad8;~.;r;!dpx;gc"
+    * bp 00520ad8 ".echotime;.echo Breakpoint 00520ad8;~.;r;!dpx;gc"
 
-    ***** Breakpoint/Log
-    * bp        - Add a breakpoint on address 004bf9f8 .if the eax register equals nil
+    ***** Conditional Breakpoint/Log on address 004bf9f8 (uitgeblankt. CPU cost te high)
+     * bp        - Add a breakpoint on address 004bf9f8 .if the eax register equals nil
     *             Het lijkt er op dat we op address 004bc65e een AV krijgen owv de functie call op address 004bfa2a in deze 004bf9f8 functie
     *             In de AV functie 004bc65e krijgen we in EDX een 00000000 door. Deze komt wss. van param_1 (eax) die in 004bf9f8 dan ook al 00000000 is
     *             Als deze theorie klopt, moeten we weer verder kijken waarom param_1 in 004bf9f8 nil is.
@@ -207,9 +207,9 @@ $ul3script = "$($root)\ul3.script"
     * .echo     - Display a comment string
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bp 004bf9f8 ".if (@eax = 0x00000000) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    * bp 004bf9f8 ".if (@eax = 0) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
 
-    ***** Breakpoint/Log
+    ***** Conditional Breakpoint/Log on address 004bc65e (uitgeblankt. CPU cost te high)
     * bp        - Add a breakpoint on address 004bc65e .if the eax register equals nil
     *             LAST_CONTROL_TRANSFER is van f685338b naar 004bc65e. f685338b is echter een adres op de heap normaal?!
     *             NOTE: method wordt zéér veel gecalled (1.312.020 Breakpoint 004bc65e, ul3acc_trace_1d20_2020-04-04_21-21-34-807.log)
@@ -218,9 +218,9 @@ $ul3script = "$($root)\ul3.script"
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
     * kbnf 2    - Display the stack frame of the given thread, together with related information
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bp 004bc65e ".if (@eax = 0x00000000) {.echotime;.echo Breakpoint 004bc65e;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    * bp 004bc65e ".if (@eax = 0) {.echotime;.echo Breakpoint 004bc65e;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
 
-    ***** Breakpoint/Log
+    ***** Breakpoint/Log on cdosys methods
     * bu        - Add a deferred or unresolved breakpoint
     * .echotime - current date/time
     * .echo     - Display a comment string
@@ -235,6 +235,32 @@ $ul3script = "$($root)\ul3.script"
     * sx - Displays the list of exceptions for the current process and the list of all nonexception events and displays the default behavior of the debugger for each exception and event.
     * g  - Start executing the process
     bl;sx;g
+
+    ***** MANUELE ACTIES !!!
+    ** Return adres noteren
+    *.dvalloc 1000
+    *
+    ** Eerst replace all van 00df0000 door vorig return adres
+    ** Daarna volgende 3 lijnen kopiëren en plakken in cdb (+ enteren)
+    *a 004bfa00
+    *JMP 0x00df0000
+    *NOP
+    *
+    ** Daarna volgende 7 lijnen kopiëren en plakken in cdb (+ enteren)
+    *a 0x00df0000
+    *mov edi,edx
+    *mov esi,eax
+    *mov ebp,edi
+    *cmp eax,0
+    *jne 0x004bfa06
+    *jmp 0x004bfa06
+    *
+    ** Daarna volgende lijn kopiëren en plakken in cdb
+    *bp 00df0011 ".echo Breakpoint 004bf9f8 nilpointer;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    *
+    ***********
+    ** controle
+    *u 004bf9f8 LD;u 0x00df0000 LD;bl
 
 '@ -replace '<<escapedRoot>>', $escapedRoot | Out-File $ul3script -Encoding Ascii -Force
 
