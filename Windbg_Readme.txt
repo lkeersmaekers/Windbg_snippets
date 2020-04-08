@@ -194,7 +194,7 @@ $ul3script = "$($root)\ul3.script"
     * bp 00520ad8 ".echotime;.echo Breakpoint 00520ad8;~.;r;!dpx;gc"
 
     ***** Conditional Breakpoint/Log on address 004bf9f8 (uitgeblankt. CPU cost te high)
-     * bp        - Add a breakpoint on address 004bf9f8 .if the eax register equals nil
+    * bp        - Add a breakpoint on address 004bf9f8 .if the eax register equals nil
     *             Het lijkt er op dat we op address 004bc65e een AV krijgen owv de functie call op address 004bfa2a in deze 004bf9f8 functie
     *             In de AV functie 004bc65e krijgen we in EDX een 00000000 door. Deze komt wss. van param_1 (eax) die in 004bf9f8 dan ook al 00000000 is
     *             Als deze theorie klopt, moeten we weer verder kijken waarom param_1 in 004bf9f8 nil is.
@@ -208,6 +208,112 @@ $ul3script = "$($root)\ul3.script"
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
     * bp 004bf9f8 ".if (@eax = 0) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+
+    ***** Unconditional Breakpoint/Log for address 004bf9f8 by rerouting instructions to add a test on nil and ability to add a conditional breakpoint
+    *     ********************************************
+    *     Following manual actions are scripted below
+    *     ********************************************
+    *     * Make note of returned address (pe. 0x00df0000)
+    *     .dvalloc 1000
+    *
+    *     * Replace all 0x00df0000 by current return address
+    *     * Copy/past following 3 lines (+enter)
+    *     a 004bfa00
+    *     JMP 0x00df0000
+    *     NOP
+    *
+    *     * Copy/paste following 7 lines (+enter)
+    *     a 0x00df0000
+    *     mov edi,edx
+    *     mov esi,eax
+    *     mov ebp,edi
+    *     cmp eax,0
+    *     jne 0x004bfa06
+    *     jmp 0x004bfa06
+    *
+    *     * Copy/paste following line 1 in cdb
+    *     bp 0x00df0011 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    *
+    *     * Verify
+    *     u 004bf9f8 LD
+    *     u 0x00df0000 LD
+    *
+    *     ********************************************
+    *     Scripting of the manual actions
+    *     ********************************************
+          ***** Allocate 100 bytes of memory to hold our patch
+          *     Remember the start adress in the $t8 pseudo register
+         .foreach /pS 5 (patch {.dvalloc 100}) {r $t8=${patch}}; ? $t8
+
+          ***** Jump to our patch when entering function 0x004bf948 to test for nil pointer
+          * 1 0x004bfa00 e9<offset>      jmp     <patch> ($t8 LE)
+          * 2 0x004bfa05 90              nop
+
+                  ***** 1 0x004bfa00 e9<offset> jmp <patch> ($t8 LE)
+                  * r $t9   the size of the jump from 0x004bfa00+0x05 to $t8
+                  * eb      e9 is the opcode for JMP
+                  * ed      append with offset where to jump to
+                  r $t9=$t8-(0x004bfa00+0x05)
+                  eb 0x004bfa00 e9
+                  ed 0x004bfa01 $t9
+
+                  ***** 2 0x004bfa05 90 nop
+                  * eb      90 is the opcode for NOP
+                  eb 0x004bfa05 90
+
+          ***** Repeat the replaced code at 0x004bfa00 used to jump to our new address
+          *     Add a compare with nil
+          *     Jump back to where we left off (0x004bfa06)
+          * 1 0x00000000 8bfa            mov     edi,edx
+          * 2 0x00000002 8bf0            mov     esi,eax
+          * 3 0x00000004 8bef            mov     ebp,edi
+          * 4 0x00000006 3d00000000      cmp     eax,0
+          * 5 0x0000000b 0f85<offset>    jne     ul3acc+0xbfa06 (004bfa06)
+          * 6 0x00000011 e9<offset>      jmp     ul3acc+0xbfa06 (004bfa06)
+
+                  ***** 1 0x0000000 mov edi,edx
+                  * ew      8b is the opcode for MOV
+                  *         fa is the opcode for ebp,edi
+                  ew $t8+0x00 fa8b
+
+                  ***** 2 0x0000002 mov esi,eax
+                  * ew      8b is the opcode for MOV
+                  *         f0 is the opcode for esi,eax
+                  ew $t8+0x02 f08b
+
+                  ***** 3 0x0000004 mov ebp,edi
+                  * ew      8b is the opcode for MOV
+                  *         ef is the opcode for ebp,edi
+                  ew $t8+0x04 ef8b
+
+                  ***** 4 0x0000006 cmp eax,0
+                  * eb      3d is the opcode for JNE
+                  * ed      append with what to compare with
+                  eb $t8+0x06 3d
+                  ed $t8+0x07 00000000
+
+                  ***** 5 0x000000b jne ul3acc+0xbfa06 (004bfa06)
+                  * r $t9   the size of the jump from $t8+11 to 0x004bfa06
+                  * ew      0f 85 is the opcode for JNE
+                  * ed      append with offset where to jump to
+                  r $t9=0x004bfa06-($t8+0x11)
+                  ew $t8+0x0b 850f
+                  ed $t8+0x0d $t9
+
+                  ***** 6 jmp ul3acc+0xbfa06 (004bfa06)
+                  * r $t9   the size of the jump from $t8+16 to 0x004bfa06
+                  * eb      e9 is the opcode for JMP
+                  * ed      append with offset where to jump to
+                  r $t9=0x004bfa06-($t8+0x16)
+                  eb $t8+0x11 e9
+                  ed $t8+0x12 $t9
+
+         ***** Verify
+         u 004bf9f8 LD
+         u $t8 LD
+
+    ***** Conditional Breakpoint/Log on address $t8
+    bp $t8 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
 
     ***** Conditional Breakpoint/Log on address 004bc65e (uitgeblankt. CPU cost te high)
     * bp        - Add a breakpoint on address 004bc65e .if the eax register equals nil
@@ -230,38 +336,11 @@ $ul3script = "$($root)\ul3.script"
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
     bm cdosys!* ".echotime;.echo Breakpoint cdosys!*;~.;r;!dpx;gc"
 
-    ***** Breakpoint/Exception status/Go
+    ***** List Breakpoint/Exception status/Go
     * bl - List existing breakpoints
     * sx - Displays the list of exceptions for the current process and the list of all nonexception events and displays the default behavior of the debugger for each exception and event.
     * g  - Start executing the process
     bl;sx;g
-
-    ***** MANUELE ACTIES !!!
-    ** Return adres noteren
-    *.dvalloc 1000
-    *
-    ** Eerst replace all van 00df0000 door vorig return adres
-    ** Daarna volgende 3 lijnen kopiëren en plakken in cdb (+ enteren)
-    *a 004bfa00
-    *JMP 0x00df0000
-    *NOP
-    *
-    ** Daarna volgende 7 lijnen kopiëren en plakken in cdb (+ enteren)
-    *a 0x00df0000
-    *mov edi,edx
-    *mov esi,eax
-    *mov ebp,edi
-    *cmp eax,0
-    *jne 0x004bfa06
-    *jmp 0x004bfa06
-    *
-    ** Daarna volgende lijn kopiëren en plakken in cdb
-    *bp 00df0011 ".echo Breakpoint 004bf9f8 nilpointer;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
-    *
-    ***********
-    ** controle
-    *u 004bf9f8 LD;u 0x00df0000 LD;bl
-
 '@ -replace '<<escapedRoot>>', $escapedRoot | Out-File $ul3script -Encoding Ascii -Force
 
 while ($true) {
