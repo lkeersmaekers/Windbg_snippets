@@ -214,7 +214,7 @@ $ul3script = "$($root)\ul3.script"
     *     Following manual actions are scripted below
     *     ********************************************
     *     * Make note of returned address (pe. 0x00df0000)
-    *     .dvalloc 1000
+    *     .dvalloc 100
     *
     *     * Replace all 0x00df0000 by current return address
     *     * Copy/past following 3 lines (+enter)
@@ -245,7 +245,8 @@ $ul3script = "$($root)\ul3.script"
           *     Remember the start adress in the $t8 pseudo register
          .foreach /pS 5 (patch {.dvalloc 100}) {r $t8=${patch}}; ? $t8
 
-          ***** Jump to our patch when entering function 0x004bf948 to test for nil pointer
+          ***** Patch the function to jump to $t8
+          *     Jump to our patch when entering function 0x004bf948 to test for nil pointer
           * 1 0x004bfa00 e9<offset>      jmp     <patch> ($t8 LE)
           * 2 0x004bfa05 90              nop
 
@@ -261,7 +262,8 @@ $ul3script = "$($root)\ul3.script"
                   * eb      90 is the opcode for NOP
                   eb 0x004bfa05 90
 
-          ***** Repeat the replaced code at 0x004bfa00 used to jump to our new address
+          ***** Create the patch at $t8
+          *     Repeat the replaced code at 0x004bfa00 used to jump to our new address
           *     Add a compare with nil
           *     Jump back to where we left off (0x004bfa06)
           * 1 0x00000000 8bfa            mov     edi,edx
