@@ -207,7 +207,7 @@ $ul3script = "$($root)\ul3.script"
     * .echo     - Display a comment string
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    * bp 004bf9f8 ".if (@eax = 0) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    * bp 004bf9f8 ".if (@eax = 0) {.echotime;.echo Breakpoint 004bf9f8;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx;};gc"
 
     ***** Unconditional Breakpoint/Log for address 004bf9f8 by rerouting instructions to add a test on nil and ability to add a conditional breakpoint
     *     ********************************************
@@ -232,7 +232,7 @@ $ul3script = "$($root)\ul3.script"
     *     jmp 0x004bfa06
     *
     *     * Copy/paste following line 1 in cdb
-    *     bp 0x00df0011 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    *     bp 0x00df0011 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx;gc"
     *
     *     * Verify
     *     u 004bf9f8 LD
@@ -315,7 +315,7 @@ $ul3script = "$($root)\ul3.script"
          u $t8 LD
 
     ***** Conditional Breakpoint/Log on address $t8
-    bp $t8+0x11 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    bp $t8+0x11 ".echo Breakpoint 004bf9f8 Nil Pointer Unconditional Check;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx;gc"
 
     ***** Conditional Breakpoint/Log on address 004bc65e (uitgeblankt. CPU cost te high)
     * bp        - Add a breakpoint on address 004bc65e .if the eax register equals nil
@@ -326,9 +326,9 @@ $ul3script = "$($root)\ul3.script"
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases
     * kbnf 2    - Display the stack frame of the given thread, together with related information
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    * bp 004bc65e ".if (@eax = 0) {.echotime;.echo Breakpoint 004bc65e;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx};gc"
+    * bp 004bc65e ".if (@eax = 0) {.echotime;.echo Breakpoint 004bc65e;r eax,ebx,ecx,edx,esi,edi,eip,esp,ebp;!dpx;};gc"
 
-    ***** Breakpoint/Log on cdosys methods
+    ***** Breakpoint/Log on cdosys methods (uitgeblankt. Mogelijk reden dat we géén AV meer krijgen/timing issue?)
     * bu        - Add a deferred or unresolved breakpoint
     * .echotime - current date/time
     * .echo     - Display a comment string
@@ -336,7 +336,7 @@ $ul3script = "$($root)\ul3.script"
     * r         - Display registers, floating-point registers, flags, pseudo-registers, and fixed-name aliases.
     * !dpx      - Equivalent of dps, dpp, dpa and dpu (combined); also class types (dt) and trap frames (kV). Displays from stack pointer to the stack base.
     * gc        - Resumes execution from the breakpoint in the same fashion that was used to hit the breakpoint.
-    bm cdosys!* ".echotime;.echo Breakpoint cdosys!*;~.;r;!dpx;gc"
+    * bm cdosys!* ".echotime;.echo Breakpoint cdosys!*;~.;r;!dpx;gc"
 
     ***** List Breakpoint/Exception status/Go
     * bl - List existing breakpoints
