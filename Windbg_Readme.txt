@@ -36,6 +36,24 @@ Interessante filetypes om dumps in vim te bekijken.
   set ft=gitrebase
 
 " => Howto's livekd/kd/cdb {{{{1"
+" => How to create a dump of specific processes? {{{{2
+gps ul3acc*,afc* | %{& "D:\ul3acc\userBackup\kelie\tools\SysInternals\procdump" -accepteula -ma $_.Id "D:\ul3acc\userBackup\kelie\debug"}
+
+" => How to add een exception monito for multiple processes? {{{{2
+cd D:\ul3acc\userBackup\kelie\debug
+[int[]]$monitored = @()
+while ($true) {
+    gps -ea SilentlyContinue -Name UL3acc*,afc* | % {
+        if (!($monitored -contains $_.Id)) {
+            $monitored += $_.Id
+            "[$(Get-Date)] - Monitor $($_.Id) - $($_.Name)"
+            $argumentList = "-accepteula -mp -n 1000 -e 1 -f 800449AE,C0000005 $($_.Id)"
+            start-process D:\ul3acc\userBackup\kelie\tools\SysInternals\procdump -argumentList $argumentList
+        }
+    }
+    Start-Sleep 10
+}
+
 " => How to dump all function names of an executable? {{{{2
 " http://stackoverflow.com/questions/36064314/how-to-dump-all-function-names-of-an-executable
 cdb -z "c:\windows\system32\notepad.exe" -c ".symfix;.reload;x *!*;q"
