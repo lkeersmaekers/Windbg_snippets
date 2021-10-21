@@ -38,8 +38,9 @@ Interessante filetypes om dumps in vim te bekijken.
 " => Howto's livekd/kd/cdb {{{{1"
 " => How to create a dump of specific processes? {{{{2
 gps ul3acc*,afc* | %{& "D:\ul3acc\userBackup\kelie\tools\SysInternals\procdump" -accepteula -ma $_.Id "D:\ul3acc\userBackup\kelie\debug"}
+gps ul3acc*,afc* | %{iex "rundll32.exe comsvcs.dll, MiniDump $($_.Id) $($_.Id).dmp full"}
 
-" => How to add een exception monito for multiple processes? {{{{2
+" => How to add een exception monitor for multiple processes? {{{{2
 cd D:\ul3acc\userBackup\kelie\debug
 [int[]]$monitored = @()
 while ($true) {
@@ -72,9 +73,11 @@ gci $folder -Recurse | % {$dmp = $_.fullname;cdb -z $dmp -c "!load pde;!dpx;kbnf
 " => How to execute command/script against multiple processes? {{{{2
 " Get last error
 gps ul3comm | % { c:\my\debuggers_x86\cdb -p $_.ID -c "!gle -all;qd" } | out-file gle.log -encoding ascii
-" Sets forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated from 300 (10 minutes) to 600 (20 minutes)
-gps afc | % {c:\my\debuggers_x86\cdb -p $_.ID -c "db 004C81C0 L3;ed 4c81c1 0258;db 004C81C0 L3;qd" | sls '004C81C0'}
-
+" Reads forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated.
+$address = '004c81b9'; gps afc | % {$cdboutput = D:\UL3acc\userBackup\kelie\tools\debuggers_x86\cdb -p $_.ID -c "db $($address) L2;qd" | sls $address}; $cdboutput;'forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated - ' + [int]"0x$(($cdboutput[1] -split ' ')[3])$(($cdboutput[1] -split ' ')[2])"
+" Sets forkerNumberOfBiSecondsAfterWhichWorkerThatFailedToSendKeepAliveMessageIsToBeForciblyTerminated from 600 (20 minutes) to 900 (30 minutes)
+gps afc | % {D:\UL3acc\userBackup\kelie\tools\debuggers_x86\cdb -p $_.ID -c "db 004c81b9 L2;ed 004c81b9 0384;db 004c81b9 L2;qd" | sls '004c81b9'}
+"
 " => How to dump 100 calls from a running process {{{{2
 " http://stackoverflow.com/questions/38710710/how-to-prevent-the-output-truncated-if-the-rows-of-output-from-the-windbg-to-lar
 cdb -c "tc 100;q" calc >> foo.txt
