@@ -172,7 +172,7 @@ $ul3script = "$($root)\ul3.script"
     * Send a copy of the events and commands from the Debugger Command window to a new log file.
     .logopen /t <<escapedRoot>>\\ul3acc_trace.log
 
-    ***** Breakpoint/Dump on address 00a1ab9d 
+    ***** Breakpoint/Dump on address 00a1ab9d
     * bp    - Add a breakpoint on address 00a1ab9d
     * .dump - Create a dump file
     *            /mA Creates a minidump with full memory data, handle data, unloaded module information, basic memory information, and thread time information.
@@ -401,13 +401,13 @@ wt -l 2 -oR -m calc
 " https://stackoverflow.com/questions/24451461/is-there-a-way-to-get-userstack-for-all-heap-userptr
 " Turn on Gflags -> Image File -> Create user mode stack trace database
 .foreach /pS 4 /ps 3 (userptr {.shell -ci "!heap -p -all" find "busy" | find /V "*"}) { !heap -p -a ${userptr}};
-
 " => Breakpoints: How to dump all calls from a live debugging session {{{{2
 bm calc!* "k L1;g;"
 
 bm ul3comm!* "r;!dpx;g;"
 bm PDC32!* "r;!dpx;g;"
 bm vbscript!* "r;!dpx;g;"
+
 
 " => Breakpoints: How to enable/disable breakpoints from other breakpoints{{{{2
 bm calc!* "k L1;g;"
