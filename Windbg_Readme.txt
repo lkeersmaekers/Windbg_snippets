@@ -40,7 +40,7 @@ Interessante filetypes om dumps in vim te bekijken.
 gps ul3acc*,afc* | %{& "D:\ul3acc\userBackup\kelie\tools\SysInternals\procdump" -accepteula -ma $_.Id "D:\ul3acc\userBackup\kelie\debug"}
 gps ul3acc*,afc* | %{iex "rundll32.exe comsvcs.dll, MiniDump $($_.Id) $($_.Id).dmp full"}
 
-" => How to add een exception monitor for multiple processes? {{{{2
+" => How to set up een exception monitor and dump for multiple processes? {{{{2
 cd D:\ul3acc\userBackup\kelie\debug
 [int[]]$monitored = @()
 while ($true) {
