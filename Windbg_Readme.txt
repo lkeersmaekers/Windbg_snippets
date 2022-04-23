@@ -36,6 +36,12 @@ Interessante filetypes om dumps in vim te bekijken.
   set ft=gitrebase
 
 " => Howto's livekd/kd/cdb {{{{1"
+" => How to collect stack traces every time a breakpoint is hit using Javascript? {{{{2
+https://www.youtube.com/watch?v=sRAAwrIEJGg&feature=youtu.be
+I just posted a new video where I make a script to collect stack traces every time a breakpoint is hit. Could be really useful for understanding the ways a function is being called!
+
+TimMisiak -  https://github.com/TimMisiak/WinDbgCookbook
+
 " => How to create a dump of specific processes? {{{{2
 gps ul3acc*,afc* | %{& "D:\ul3acc\userBackup\kelie\tools\SysInternals\procdump" -accepteula -ma $_.Id "D:\ul3acc\userBackup\kelie\debug"}
 gps ul3acc*,afc* | %{iex "rundll32.exe comsvcs.dll, MiniDump $($_.Id) $($_.Id).dmp full"}
